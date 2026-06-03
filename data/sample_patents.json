@@ -1,0 +1,68 @@
+[
+  {
+    "patent_id": "US20240011234A1",
+    "title": "Adaptive beam management for low latency wireless handover",
+    "abstract": "A wireless communication system performs adaptive beam measurement and handover preparation based on user equipment mobility, radio link quality, and predicted serving cell degradation. Candidate beams and target cells are ranked before a handover command to reduce interruption time in dense 5G networks.",
+    "claims": "A method comprising monitoring beam reference signals, predicting link degradation, selecting a target beam, and preparing a handover command before radio link failure.",
+    "assignee": "Example Networks Inc.",
+    "publication_date": "2024-01-11",
+    "jurisdiction": "US",
+    "cpc": ["H04W36/00", "H04W72/00"],
+    "url": "https://patents.google.com/patent/US20240011234A1"
+  },
+  {
+    "patent_id": "US20230222111A1",
+    "title": "Edge assisted mobility prediction in cellular networks",
+    "abstract": "An edge computing node receives signal quality, location history, and application latency requirements from user equipment. The edge node predicts mobility patterns and recommends proactive handover candidates for ultra reliable low latency communication services.",
+    "claims": "A system including an edge node configured to infer mobility trajectory and provide a ranked list of handover targets to a base station.",
+    "assignee": "Metro Radio Labs",
+    "publication_date": "2023-07-20",
+    "jurisdiction": "US",
+    "cpc": ["H04W36/08", "H04W28/02"],
+    "url": "https://patents.google.com/patent/US20230222111A1"
+  },
+  {
+    "patent_id": "EP3988776A1",
+    "title": "Network slicing resource allocation for industrial IoT",
+    "abstract": "A radio access network allocates resources among network slices according to industrial sensor priority, packet delay budget, and reliability targets. The scheduling controller dynamically adjusts slice quotas during congestion.",
+    "claims": "A scheduler for assigning radio resources to network slices based on latency and reliability constraints.",
+    "assignee": "Industrial Connectivity AG",
+    "publication_date": "2022-04-27",
+    "jurisdiction": "EP",
+    "cpc": ["H04W72/12", "H04L47/70"],
+    "url": "https://worldwide.espacenet.com/patent/search?q=EP3988776A1"
+  },
+  {
+    "patent_id": "CN116778899A",
+    "title": "Method for reducing handover interruption in high speed rail communication",
+    "abstract": "The method uses train route information, neighboring cell signal reports, and dual connectivity configuration to reserve radio resources in advance. The terminal switches to a target cell with reduced service interruption.",
+    "claims": "A handover method for high speed movement scenarios comprising route based prediction and preconfigured target cell resources.",
+    "assignee": "Rail Mobile Technology Co.",
+    "publication_date": "2023-09-19",
+    "jurisdiction": "CN",
+    "cpc": ["H04W36/30", "H04W4/42"],
+    "url": "https://patents.google.com/patent/CN116778899A"
+  },
+  {
+    "patent_id": "US20210199887A1",
+    "title": "Power saving wake up signal for narrowband IoT devices",
+    "abstract": "A narrowband IoT terminal receives a low power wake up signal before paging occasions. The approach reduces battery consumption while maintaining reachability for low data rate devices.",
+    "claims": "A terminal configured to monitor a wake up signal and skip paging monitoring when no wake up indication is present.",
+    "assignee": "SensorCom LLC",
+    "publication_date": "2021-07-01",
+    "jurisdiction": "US",
+    "cpc": ["H04W52/02", "H04W68/00"],
+    "url": "https://patents.google.com/patent/US20210199887A1"
+  },
+  {
+    "patent_id": "WO2023155512A1",
+    "title": "AI based anomaly detection for radio access network performance",
+    "abstract": "A network management system applies machine learning to counters and event logs to detect abnormal radio access network performance and recommend optimization actions for base stations.",
+    "claims": "A method for detecting anomalies in radio network metrics using a trained model and generating corrective recommendations.",
+    "assignee": "Global Telecom Systems",
+    "publication_date": "2023-08-24",
+    "jurisdiction": "WO",
+    "cpc": ["H04W24/02", "G06N20/00"],
+    "url": "https://patents.google.com/patent/WO2023155512A1"
+  }
+]
