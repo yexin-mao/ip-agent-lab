@@ -9,7 +9,8 @@ from backend.agents.keyword_expander import KeywordExpansionAgent
 from backend.agents.patent_search import PatentSearchAgent
 from backend.agents.prior_art_compare import PriorArtCompareAgent
 from backend.agents.report_agent import ReportAgent
-from backend.retrieval.hybrid import LocalHybridRetriever
+from backend.retrieval.chunker import PatentChunker
+from backend.retrieval.hybrid_rag import HybridRAGRetriever
 from backend.retrieval.local_corpus import load_patent_corpus
 from backend.schemas.models import NoveltyTaskResult, TaskStatus
 
@@ -17,7 +18,8 @@ from backend.schemas.models import NoveltyTaskResult, TaskStatus
 class NoveltyOrchestrator:
     def __init__(self, corpus_path: str | Path):
         documents = load_patent_corpus(corpus_path)
-        retriever = LocalHybridRetriever(documents)
+        chunks = PatentChunker().chunk_documents(documents)
+        retriever = HybridRAGRetriever(chunks)
         self.parser = DisclosureParserAgent()
         self.keyword_expander = KeywordExpansionAgent()
         self.search_agent = PatentSearchAgent(retriever)
@@ -28,9 +30,9 @@ class NoveltyOrchestrator:
         task_id = task_id or f"novelty-{uuid4().hex[:10]}"
         disclosure = self.parser.run(disclosure_text)
         keywords = self.keyword_expander.run(disclosure)
-        search_results = self.search_agent.run(keywords, limit=limit)
-        comparisons = self.compare_agent.run(disclosure, search_results)
-        report = self.report_agent.run(task_id, disclosure, keywords, search_results, comparisons)
+        evidence_results = self.search_agent.run(keywords, limit=limit)
+        comparisons = self.compare_agent.run(disclosure, evidence_results)
+        report = self.report_agent.run(task_id, disclosure, keywords, evidence_results, comparisons)
 
         return NoveltyTaskResult(
             task_id=task_id,
@@ -38,7 +40,7 @@ class NoveltyOrchestrator:
             created_at=datetime.now(),
             disclosure=disclosure,
             keywords=keywords,
-            search_results=search_results,
+            evidence_results=evidence_results,
             comparisons=comparisons,
             report_markdown=report,
         )

@@ -29,12 +29,12 @@ def load_sample_text() -> str:
 def main() -> None:
     st.set_page_config(page_title="IP AgentLab", layout="wide")
     st.title("IP AgentLab")
-    st.caption("Patent novelty search MVP: disclosure parsing, keyword expansion, local prior art retrieval, risk analysis, and report generation.")
+    st.caption("Patent novelty search MVP: disclosure parsing, keyword expansion, chunk-level hybrid RAG retrieval, risk analysis, and report generation.")
 
     with st.sidebar:
         st.header("Analysis Settings")
         limit = st.slider("Prior art candidates", min_value=3, max_value=8, value=6)
-        st.info("MVP uses a local sample patent corpus. External patent APIs, Qdrant, and LLM calls are planned extension points.")
+        st.info("MVP uses a local patent corpus with BM25 + hashing-vector hybrid retrieval. Qdrant and production embeddings are planned extension points.")
 
     default_text = load_sample_text()
     disclosure_text = st.text_area(
@@ -92,18 +92,26 @@ def main() -> None:
 
     with tab_results:
         comparisons_by_id = {item.patent_id: item for item in result.comparisons}
-        for idx, search_result in enumerate(result.search_results, start=1):
-            doc = search_result.document
-            comparison = comparisons_by_id.get(doc.patent_id)
+        for idx, search_result in enumerate(result.evidence_results, start=1):
+            comparison = comparisons_by_id.get(search_result.patent_id)
             risk_label = comparison.risk_level.value if comparison else "N/A"
-            with st.expander(f"{idx}. {doc.patent_id} | {risk_label} | {doc.title}", expanded=idx <= 3):
-                st.write(doc.abstract)
+            with st.expander(f"{idx}. {search_result.patent_id} | {risk_label} | {search_result.title}", expanded=idx <= 3):
                 st.markdown(f"**Retrieval score:** {search_result.score}")
-                st.markdown(f"**Matched terms:** {', '.join(search_result.matched_terms) or 'N/A'}")
-                st.markdown(f"**Assignee:** {doc.assignee or 'N/A'}")
-                st.markdown(f"**Publication date:** {doc.publication_date or 'N/A'}")
-                if doc.url:
-                    st.markdown(f"[Open patent]({doc.url})")
+                st.markdown(f"**Assignee:** {search_result.assignee or 'N/A'}")
+                st.markdown(f"**Publication date:** {search_result.publication_date or 'N/A'}")
+                st.markdown(f"**CPC:** {', '.join(search_result.cpc) or 'N/A'}")
+                if search_result.source_url:
+                    st.markdown(f"[Open patent]({search_result.source_url})")
+
+                st.markdown("**Evidence chunks**")
+                for chunk_result in search_result.evidence_chunks:
+                    chunk = chunk_result.chunk
+                    st.markdown(
+                        f"- `{chunk.chunk_id}` | section: `{chunk.section}` | score: `{chunk_result.score}` | {chunk_result.retrieval_reason}"
+                    )
+                    if chunk_result.matched_terms:
+                        st.caption(f"Matched terms: {', '.join(chunk_result.matched_terms)}")
+                    st.write(chunk.text)
 
                 if comparison:
                     st.markdown("**Overlaps**")

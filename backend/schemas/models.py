@@ -56,11 +56,45 @@ class PatentDocument(BaseModel):
     url: str = ""
 
 
+class PatentChunk(BaseModel):
+    chunk_id: str
+    patent_id: str
+    title: str
+    section: str
+    text: str
+    assignee: str = ""
+    publication_date: str = ""
+    jurisdiction: str = ""
+    cpc: List[str] = Field(default_factory=list)
+    source_url: str = ""
+
+
 class SearchResult(BaseModel):
     document: PatentDocument
     score: float
     matched_terms: List[str] = Field(default_factory=list)
     retrieval_reason: str = ""
+
+
+class EvidenceChunkResult(BaseModel):
+    chunk: PatentChunk
+    score: float
+    bm25_rank: Optional[int] = None
+    vector_rank: Optional[int] = None
+    matched_terms: List[str] = Field(default_factory=list)
+    retrieval_reason: str = ""
+
+
+class GroupedPatentEvidence(BaseModel):
+    patent_id: str
+    title: str
+    assignee: str = ""
+    publication_date: str = ""
+    jurisdiction: str = ""
+    cpc: List[str] = Field(default_factory=list)
+    source_url: str = ""
+    score: float
+    evidence_chunks: List[EvidenceChunkResult] = Field(default_factory=list)
 
 
 class PriorArtComparison(BaseModel):
@@ -81,6 +115,7 @@ class NoveltyTaskResult(BaseModel):
     created_at: datetime
     disclosure: DisclosureAnalysis
     keywords: KeywordSet
-    search_results: List[SearchResult]
+    search_results: List[SearchResult] = Field(default_factory=list)
+    evidence_results: List[GroupedPatentEvidence] = Field(default_factory=list)
     comparisons: List[PriorArtComparison]
     report_markdown: Optional[str] = None

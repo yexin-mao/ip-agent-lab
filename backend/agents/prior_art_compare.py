@@ -5,9 +5,9 @@ from typing import List
 from backend.retrieval.hybrid import tokenize
 from backend.schemas.models import (
     DisclosureAnalysis,
+    GroupedPatentEvidence,
     PriorArtComparison,
     RiskLevel,
-    SearchResult,
 )
 
 
@@ -15,7 +15,7 @@ class PriorArtCompareAgent:
     def run(
         self,
         disclosure: DisclosureAnalysis,
-        search_results: List[SearchResult],
+        search_results: List[GroupedPatentEvidence],
     ) -> List[PriorArtComparison]:
         comparisons = []
         invention_terms = set(tokenize(" ".join([
@@ -26,8 +26,8 @@ class PriorArtCompareAgent:
         ])))
 
         for result in search_results:
-            doc = result.document
-            doc_text = " ".join([doc.title, doc.abstract, doc.claims])
+            evidence_texts = [chunk_result.chunk.text for chunk_result in result.evidence_chunks]
+            doc_text = " ".join([result.title] + evidence_texts)
             doc_terms = set(tokenize(doc_text))
             overlap_terms = sorted(invention_terms.intersection(doc_terms))
             overlap_ratio = len(overlap_terms) / max(len(invention_terms), 1)
@@ -40,8 +40,8 @@ class PriorArtCompareAgent:
 
             comparisons.append(
                 PriorArtComparison(
-                    patent_id=doc.patent_id,
-                    title=doc.title,
+                    patent_id=result.patent_id,
+                    title=result.title,
                     relevance_score=relevance_score,
                     risk_level=risk,
                     overlaps=overlaps,

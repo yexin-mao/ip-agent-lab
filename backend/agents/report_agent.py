@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List
 
-from backend.schemas.models import DisclosureAnalysis, KeywordSet, PriorArtComparison, SearchResult
+from backend.schemas.models import DisclosureAnalysis, GroupedPatentEvidence, KeywordSet, PriorArtComparison
 
 
 class ReportAgent:
@@ -12,7 +12,7 @@ class ReportAgent:
         task_id: str,
         disclosure: DisclosureAnalysis,
         keywords: KeywordSet,
-        search_results: List[SearchResult],
+        search_results: List[GroupedPatentEvidence],
         comparisons: List[PriorArtComparison],
     ) -> str:
         selected = [item for item in comparisons if item.add_to_report]
@@ -46,15 +46,25 @@ class ReportAgent:
         ])
 
         for idx, result in enumerate(search_results, start=1):
-            doc = result.document
             lines.extend([
-                f"### {idx}. {doc.patent_id} - {doc.title}",
+                f"### {idx}. {result.patent_id} - {result.title}",
                 f"- Score: {result.score}",
-                f"- Assignee: {doc.assignee or 'N/A'}",
-                f"- Date: {doc.publication_date or 'N/A'}",
-                f"- Matched terms: {', '.join(result.matched_terms) or 'N/A'}",
-                f"- URL: {doc.url or 'N/A'}",
-                f"- Abstract: {doc.abstract}",
+                f"- Assignee: {result.assignee or 'N/A'}",
+                f"- Date: {result.publication_date or 'N/A'}",
+                f"- Jurisdiction: {result.jurisdiction or 'N/A'}",
+                f"- CPC: {', '.join(result.cpc) or 'N/A'}",
+                f"- URL: {result.source_url or 'N/A'}",
+                "- Evidence chunks:",
+            ])
+            for chunk_result in result.evidence_chunks:
+                chunk = chunk_result.chunk
+                lines.extend([
+                    f"  - `{chunk.chunk_id}` | section: `{chunk.section}` | score: {chunk_result.score}",
+                    f"    - retrieval: {chunk_result.retrieval_reason}",
+                    f"    - matched terms: {', '.join(chunk_result.matched_terms) or 'N/A'}",
+                    f"    - evidence: {chunk.text}",
+                ])
+            lines.extend([
                 "",
             ])
 

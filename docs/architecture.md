@@ -6,7 +6,11 @@ Streamlit Frontend
       -> DisclosureParserAgent
       -> KeywordExpansionAgent
       -> PatentSearchAgent
-          -> LocalHybridRetriever
+          -> HybridRAGRetriever
+              -> PatentChunker
+              -> BM25Index
+              -> InMemoryVectorIndex
+              -> RRF fusion
       -> PriorArtCompareAgent
       -> ReportAgent
   -> Markdown Report
@@ -16,17 +20,42 @@ Streamlit Frontend
 
 - `DisclosureParserAgent`: converts raw disclosure text into structured invention information.
 - `KeywordExpansionAgent`: generates core terms, synonyms, query groups, and classification hints.
-- `PatentSearchAgent`: retrieves candidate prior art.
-- `PriorArtCompareAgent`: compares retrieved patents against innovation points and assigns risk.
+- `PatentSearchAgent`: retrieves chunk-level prior-art evidence.
+- `PriorArtCompareAgent`: compares retrieved evidence chunks against innovation points and assigns risk.
 - `ReportAgent`: produces a reviewable novelty report.
 
-## Extension Roadmap
+## Current RAG Retrieval Layer
 
-Replace `LocalHybridRetriever` with a production retrieval stack:
+The current retrieval layer is chunk-based:
+
+```text
+PatentDocument[]
+  -> PatentChunker
+  -> PatentChunk[]
+      -> BM25Index
+      -> HashingEmbeddingModel + InMemoryVectorIndex
+  -> HybridRAGRetriever
+      -> BM25 recall
+      -> vector recall
+      -> Reciprocal Rank Fusion
+      -> group evidence chunks by patent_id
+```
+
+The system now returns `GroupedPatentEvidence`, where each patent contains
+specific `EvidenceChunkResult` objects with section, score, matched terms, and
+evidence text.
+
+The local vector path uses deterministic hashing embeddings so the demo runs
+without downloading models or starting external services.
+
+## Production Extension Roadmap
+
+Replace the local vector path with a production retrieval stack:
 
 ```text
 query expansion
   -> BM25 keyword recall
+  -> BGE/OpenAI embedding
   -> vector recall with Qdrant
   -> metadata filters, classification filters, jurisdiction filters
   -> reranker

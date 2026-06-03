@@ -6,6 +6,7 @@ The MVP is designed so retrieval and agent quality can be measured later.
 
 - `recall@k`: whether known relevant prior art appears in the top k results.
 - `precision@k`: proportion of top k results judged relevant by humans.
+- chunk evidence hit rate: whether the returned chunk contains the actual supporting disclosure.
 - rerank lift: improvement after reranking compared with baseline retrieval.
 - evidence quality: whether each risk conclusion includes supporting text.
 - human override rate: how often reviewers change AI risk labels.
