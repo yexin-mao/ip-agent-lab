@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from backend.llm.client import LLMClient
-from backend.schemas.models import DisclosureAnalysis, KeywordSet
+from backend.schemas.models import DisclosureAnalysis, KeywordSet, RetrievalQuery
 
 
 DOMAIN_SYNONYMS = {
@@ -21,6 +21,8 @@ class KeywordExpansionAgent:
     def run(self, disclosure: DisclosureAnalysis) -> KeywordSet:
         llm_result = self._run_llm(disclosure)
         if llm_result:
+            if not llm_result.retrieval_queries:
+                llm_result.retrieval_queries = self._build_retrieval_queries(disclosure, llm_result)
             return llm_result
 
         base_terms = []
@@ -44,13 +46,15 @@ class KeywordExpansionAgent:
         query_groups = self._build_query_groups(disclosure, core_terms, synonyms)
         classification_hints = self._classification_hints(english_terms)
 
-        return KeywordSet(
+        keywords = KeywordSet(
             core_terms=core_terms,
             synonyms=synonyms,
             english_terms=english_terms,
             query_groups=query_groups,
             classification_hints=classification_hints,
         )
+        keywords.retrieval_queries = self._build_retrieval_queries(disclosure, keywords)
+        return keywords
 
     def _run_llm(self, disclosure: DisclosureAnalysis) -> KeywordSet | None:
         system_prompt = (
@@ -113,6 +117,36 @@ Rules:
         if disclosure.innovation_points:
             groups.append(" ".join(disclosure.innovation_points[:2]))
         return [group for group in groups if group.strip()]
+
+    def _build_retrieval_queries(self, disclosure: DisclosureAnalysis, keywords: KeywordSet):
+        queries = []
+
+        def add(query_text: str, source: str, weight: float) -> None:
+            cleaned = " ".join((query_text or "").split())
+            if cleaned and cleaned.lower() not in {item.query_text.lower() for item in queries}:
+                queries.append(RetrievalQuery(query_text=cleaned, source=source, weight=weight))
+
+        add(disclosure.title, "title", 1.0)
+        add(disclosure.problem, "problem", 0.9)
+        add(disclosure.solution, "solution", 1.2)
+
+        for idx, point in enumerate(disclosure.innovation_points[:6], start=1):
+            add(point, f"innovation_point_{idx}", 1.4)
+
+        if disclosure.effects:
+            add(" ".join(disclosure.effects[:3]), "technical_effects", 0.8)
+        if disclosure.applications:
+            add(" ".join(disclosure.applications[:3]), "applications", 0.7)
+
+        add(" ".join(keywords.core_terms[:10]), "core_terms", 1.0)
+        add(" ".join((keywords.core_terms + keywords.synonyms)[:16]), "expanded_terms", 0.9)
+        add(" ".join(keywords.english_terms[:16]), "english_terms", 0.8)
+        add(" ".join(keywords.classification_hints[:4]), "classification_hints", 0.6)
+
+        for idx, query_group in enumerate(keywords.query_groups[:6], start=1):
+            add(query_group, f"query_group_{idx}", 0.8)
+
+        return queries
 
     def _classification_hints(self, terms):
         joined = " ".join(terms).lower()

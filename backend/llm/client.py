@@ -27,10 +27,10 @@ class LLMConfig:
 
 def load_llm_config() -> LLMConfig:
     return LLMConfig(
-        provider=os.getenv("IP_AGENT_LLM_PROVIDER", "none").strip().lower(),
+        provider=os.getenv("IP_AGENT_LLM_PROVIDER", "openai_compatible").strip().lower(),
         api_key=os.getenv("IP_AGENT_LLM_API_KEY", "").strip(),
-        base_url=os.getenv("IP_AGENT_LLM_BASE_URL", "").strip().rstrip("/"),
-        model=os.getenv("IP_AGENT_LLM_MODEL", "").strip(),
+        base_url=os.getenv("IP_AGENT_LLM_BASE_URL", "https://api.openai.com/v1").strip().rstrip("/"),
+        model=os.getenv("IP_AGENT_LLM_MODEL", "gpt-4o-mini").strip(),
         timeout_seconds=int(os.getenv("IP_AGENT_LLM_TIMEOUT", "60")),
     )
 

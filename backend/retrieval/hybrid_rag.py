@@ -71,6 +71,13 @@ class HybridRAGRetriever:
         return sorted(grouped, key=lambda item: item.score, reverse=True)[:top_k_patents]
 
     def _queries_from_keywords(self, keywords: KeywordSet) -> List[str]:
+        if keywords.retrieval_queries:
+            return [
+                query.query_text
+                for query in keywords.retrieval_queries
+                if query.query_text and query.query_text.strip()
+            ]
+
         queries = []
         queries.extend(keywords.query_groups)
         queries.append(" ".join(keywords.core_terms[:10]))

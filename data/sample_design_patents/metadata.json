@@ -1,0 +1,62 @@
+[
+  {
+    "design_id": "USD-DEMO-CHAIR-001",
+    "title": "Rounded lounge chair with continuous loop arms",
+    "product_type": "chair",
+    "assignee": "Demo Furniture Studio",
+    "publication_date": "2024-03-12",
+    "jurisdiction": "US",
+    "source_url": "https://example.com/design/USD-DEMO-CHAIR-001",
+    "images": [
+      {
+        "view": "front",
+        "path": "chair_loop_front.png"
+      }
+    ]
+  },
+  {
+    "design_id": "USD-DEMO-CHAIR-002",
+    "title": "Angular dining chair with tapered legs",
+    "product_type": "chair",
+    "assignee": "Demo Home Objects",
+    "publication_date": "2023-10-04",
+    "jurisdiction": "US",
+    "source_url": "https://example.com/design/USD-DEMO-CHAIR-002",
+    "images": [
+      {
+        "view": "front",
+        "path": "chair_angular_front.png"
+      }
+    ]
+  },
+  {
+    "design_id": "USD-DEMO-BOTTLE-001",
+    "title": "Tall bottle with narrow neck and rounded shoulders",
+    "product_type": "bottle",
+    "assignee": "Demo Packaging Lab",
+    "publication_date": "2024-01-18",
+    "jurisdiction": "US",
+    "source_url": "https://example.com/design/USD-DEMO-BOTTLE-001",
+    "images": [
+      {
+        "view": "front",
+        "path": "bottle_round_front.png"
+      }
+    ]
+  },
+  {
+    "design_id": "USD-DEMO-LAMP-001",
+    "title": "Desk lamp with conical shade and slim stand",
+    "product_type": "lamp",
+    "assignee": "Demo Lighting Works",
+    "publication_date": "2022-08-09",
+    "jurisdiction": "US",
+    "source_url": "https://example.com/design/USD-DEMO-LAMP-001",
+    "images": [
+      {
+        "view": "front",
+        "path": "lamp_cone_front.png"
+      }
+    ]
+  }
+]

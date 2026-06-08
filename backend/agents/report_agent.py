@@ -3,7 +3,14 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List
 
-from backend.schemas.models import DisclosureAnalysis, GroupedPatentEvidence, KeywordSet, PriorArtComparison
+from backend.schemas.models import (
+    DisclosureAnalysis,
+    FTOClaimChartRow,
+    GroupedPatentEvidence,
+    KeywordSet,
+    NoveltyMatrixRow,
+    PriorArtComparison,
+)
 
 
 class ReportAgent:
@@ -13,6 +20,8 @@ class ReportAgent:
         disclosure: DisclosureAnalysis,
         keywords: KeywordSet,
         search_results: List[GroupedPatentEvidence],
+        novelty_matrix: List[NoveltyMatrixRow],
+        fto_claim_chart: List[FTOClaimChartRow],
         comparisons: List[PriorArtComparison],
     ) -> str:
         selected = [item for item in comparisons if item.add_to_report]
@@ -68,6 +77,49 @@ class ReportAgent:
                 "",
             ])
 
+        lines.append("## Innovation Point Evidence Matrix")
+        if novelty_matrix:
+            lines.extend([
+                "| Innovation Point | Patent | Coverage | Risk | Evidence | Reason |",
+                "| --- | --- | --- | --- | --- | --- |",
+            ])
+            for row in novelty_matrix:
+                evidence_ref = row.evidence_chunk_id or "N/A"
+                patent_ref = f"{row.patent_id} - {row.title}" if row.patent_id else "N/A"
+                lines.append(
+                    "| "
+                    f"{self._cell(row.innovation_point_id + ': ' + row.innovation_point)} | "
+                    f"{self._cell(patent_ref)} | "
+                    f"{row.coverage.value} | "
+                    f"{row.risk_level.value} | "
+                    f"{self._cell(evidence_ref)} | "
+                    f"{self._cell(row.reasoning)} |"
+                )
+        else:
+            lines.append("No innovation point evidence matrix was generated.")
+        lines.append("")
+
+        lines.append("## FTO Claim Chart")
+        if fto_claim_chart:
+            lines.extend([
+                "| Technical Element | Patent | Mapping | Risk | Claim Chunk | Reason |",
+                "| --- | --- | --- | --- | --- | --- |",
+            ])
+            for row in fto_claim_chart:
+                patent_ref = f"{row.patent_id} - {row.title}" if row.patent_id else "N/A"
+                lines.append(
+                    "| "
+                    f"{self._cell(row.element_id + ': ' + row.technical_element)} | "
+                    f"{self._cell(patent_ref)} | "
+                    f"{row.mapping.value} | "
+                    f"{row.risk_level.value} | "
+                    f"{self._cell(row.claim_chunk_id or 'N/A')} | "
+                    f"{self._cell(row.reasoning)} |"
+                )
+        else:
+            lines.append("No FTO claim chart was generated.")
+        lines.append("")
+
         lines.append("## Novelty Risk Analysis")
         for idx, item in enumerate(selected, start=1):
             lines.extend([
@@ -88,3 +140,6 @@ class ReportAgent:
             lines.append("No prior art was selected for the report.")
 
         return "\n".join(lines)
+
+    def _cell(self, value: str) -> str:
+        return value.replace("|", "\\|").replace("\n", " ").strip()

@@ -1,0 +1,142 @@
+from __future__ import annotations
+
+from datetime import datetime
+from pathlib import Path
+from uuid import uuid4
+
+from backend.retrieval.design_corpus import load_design_corpus
+from backend.retrieval.design_image_features import PerceptualImageFeatureExtractor
+from backend.schemas.models import DesignFTOResult, DesignPatentImage, DesignSearchResult, RiskLevel, TaskStatus
+
+
+class DesignFTOAgent:
+    def __init__(self, corpus_dir: str | Path):
+        self.corpus_dir = Path(corpus_dir)
+        self.images = load_design_corpus(self.corpus_dir)
+        self.extractor = PerceptualImageFeatureExtractor()
+        self.index = [
+            (image, self.extractor.extract_from_path(image.image_path))
+            for image in self.images
+        ]
+
+    def run(
+        self,
+        query_image_bytes: bytes,
+        query_image_name: str = "",
+        product_type: str = "",
+        top_k: int = 5,
+        task_id: str | None = None,
+    ) -> DesignFTOResult:
+        task_id = task_id or f"design-fto-{uuid4().hex[:10]}"
+        query_feature = self.extractor.extract_from_bytes(query_image_bytes)
+        normalized_product_type = product_type.strip().lower()
+
+        results = []
+        for image, feature in self.index:
+            visual_similarity = self.extractor.similarity(query_feature, feature)
+            type_boost = self._product_type_boost(normalized_product_type, image)
+            score = round(min(visual_similarity + type_boost, 1.0), 4)
+            risk = self._risk_level(score)
+            results.append(
+                DesignSearchResult(
+                    image=image,
+                    similarity_score=score,
+                    risk_level=risk,
+                    visual_overlaps=self._visual_overlaps(score, normalized_product_type, image),
+                    visual_differences=self._visual_differences(score),
+                    reasoning=self._reasoning(score, image),
+                )
+            )
+
+        ranked = sorted(results, key=lambda item: item.similarity_score, reverse=True)[:top_k]
+        report = self._report(task_id, query_image_name, product_type, ranked)
+        return DesignFTOResult(
+            task_id=task_id,
+            status=TaskStatus.report_generated,
+            created_at=datetime.now(),
+            product_type=product_type,
+            query_image_name=query_image_name,
+            search_results=ranked,
+            report_markdown=report,
+        )
+
+    def _product_type_boost(self, product_type: str, image: DesignPatentImage) -> float:
+        if not product_type:
+            return 0.0
+        known_type = image.product_type.lower()
+        if product_type == known_type:
+            return 0.06
+        if product_type in known_type or known_type in product_type:
+            return 0.03
+        return -0.04
+
+    def _risk_level(self, score: float) -> RiskLevel:
+        if score >= 0.9:
+            return RiskLevel.high
+        if score >= 0.78:
+            return RiskLevel.medium
+        return RiskLevel.low
+
+    def _visual_overlaps(self, score: float, product_type: str, image: DesignPatentImage) -> list[str]:
+        overlaps = ["Similar overall silhouette and image-level visual impression."]
+        if product_type and product_type == image.product_type.lower():
+            overlaps.append(f"Same product category: {image.product_type}.")
+        if score >= 0.86:
+            overlaps.append("Close match in contour, edge density, and dominant visual proportions.")
+        return overlaps
+
+    def _visual_differences(self, score: float) -> list[str]:
+        if score >= 0.9:
+            return ["Minor visual differences need manual review from all available design views."]
+        if score >= 0.78:
+            return ["Some visible differences remain; review front, side, and perspective views before clearance."]
+        return ["Overall visual impression appears different in the current sample image search."]
+
+    def _reasoning(self, score: float, image: DesignPatentImage) -> str:
+        if score >= 0.9:
+            return f"High visual similarity to {image.design_id}; prioritize manual design patent comparison."
+        if score >= 0.78:
+            return f"Moderate similarity to {image.design_id}; review drawings and product category before launch."
+        return f"Low similarity to {image.design_id} based on the current visual descriptor."
+
+    def _report(
+        self,
+        task_id: str,
+        query_image_name: str,
+        product_type: str,
+        results: list[DesignSearchResult],
+    ) -> str:
+        lines = [
+            "# Design FTO Search Report",
+            "",
+            f"Task ID: `{task_id}`",
+            f"Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Query image: {query_image_name or 'uploaded image'}",
+            f"Product type: {product_type or 'not specified'}",
+            "",
+            "## AI Use Notice",
+            "This report is generated by an AI-assisted visual search workflow and is not a legal opinion. Manual design patent review is required.",
+            "",
+            "## Visual Similarity Results",
+        ]
+        for index, result in enumerate(results, start=1):
+            image = result.image
+            lines.extend([
+                f"### {index}. {image.design_id} - {image.title}",
+                f"- Product type: {image.product_type}",
+                f"- View: {image.view}",
+                f"- Similarity score: {result.similarity_score}",
+                f"- Risk level: {result.risk_level.value}",
+                f"- Assignee: {image.assignee or 'N/A'}",
+                f"- Publication date: {image.publication_date or 'N/A'}",
+                f"- Source: {image.source_url or 'N/A'}",
+                "- Visual overlaps:",
+            ])
+            lines.extend([f"  - {item}" for item in result.visual_overlaps] or ["  - N/A"])
+            lines.append("- Visual differences:")
+            lines.extend([f"  - {item}" for item in result.visual_differences] or ["  - N/A"])
+            lines.extend([
+                f"- Reasoning: {result.reasoning}",
+                "",
+            ])
+        return "\n".join(lines)
