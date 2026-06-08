@@ -1,5 +1,18 @@
 # Architecture
 
+IP AgentLab is organized around three layers:
+
+```text
+Streamlit product demo
+  -> agent workflow
+      -> RAG retrieval infrastructure
+```
+
+The current implementation is local-first so it can be demonstrated without
+external services. The intended production-style direction is to keep the same
+business workflow while replacing the retrieval and orchestration internals with
+LlamaIndex and LangGraph.
+
 ```text
 Streamlit Frontend
   -> NoveltyOrchestrator
@@ -15,6 +28,21 @@ Streamlit Frontend
       -> ReportAgent
   -> Markdown Report
 ```
+
+## Business Workflow
+
+```text
+Technical disclosure
+  -> invention summary and innovation points
+  -> search terms and classification hints
+  -> prior-art evidence retrieval
+  -> novelty risk comparison
+  -> report for human review
+```
+
+The system is intended to support early patent novelty search first. The planned
+extension is FTO analysis, where claim elements are compared against product or
+technical features and rendered as a claim chart.
 
 ## Agent Responsibilities
 
@@ -47,6 +75,50 @@ evidence text.
 
 The local vector path uses deterministic hashing embeddings so the demo runs
 without downloading models or starting external services.
+
+## Planned LlamaIndex Retrieval Layer
+
+LlamaIndex should own the document and retrieval layer:
+
+```text
+patent PDFs / text / API records
+  -> document loaders
+  -> node parser and metadata extraction
+  -> embedding model
+  -> vector store
+  -> BM25 retriever
+  -> hybrid retrieval
+  -> reranker
+  -> evidence chunks
+```
+
+This keeps indexing, chunking, metadata filtering, retriever configuration, and
+reranking in one RAG-focused layer.
+
+## Planned LangGraph Workflow Layer
+
+LangGraph should own multi-agent orchestration:
+
+```text
+parse_disclosure
+  -> expand_keywords
+  -> retrieve_evidence
+  -> judge_evidence
+  -> compare_novelty
+  -> generate_report
+```
+
+Future branches:
+
+```text
+weak evidence -> expand query -> retrieve again
+high novelty risk -> build claim chart
+FTO mode -> compare product features against claim elements
+human review -> apply risk override -> regenerate report
+```
+
+The key boundary is simple: LlamaIndex retrieves evidence; LangGraph decides
+which agent step runs next.
 
 ## Production Extension Roadmap
 
